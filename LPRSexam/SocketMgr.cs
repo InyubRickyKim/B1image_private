@@ -8,12 +8,15 @@ using System.Net;
 using System.Net.Sockets;
 using System.Collections;
 
+using LPRSProtocol.LPRSToServerMsg;
+
 namespace Common.BerkSocketMgr
 {
     public struct SOCK_INFO
     {
         public Socket objSock;
         public object objLock;
+        public bool isConn;
     }
     class SOCKET_MGR
     {
@@ -21,7 +24,9 @@ namespace Common.BerkSocketMgr
             SUCCESS = 0,
             FAILED_IMPLEMENT_SOCKET,
             FAILED_INIT_ENDPOINT,
-            FAILED_BIND
+            FAILED_BIND,
+            RECV_NO_DATA,
+            FAILED_NULL_SOCKET
         };
         public int impBerkSocket(ref Socket objSocket, int nAddressFamily, int nSocketType, int nProtocolType)
         {
@@ -87,11 +92,13 @@ namespace Common.BerkSocketMgr
             //ArrayList lstListen = new ArrayList();
             //ArrayList lstAccept = new ArrayList();
 
-            // init lock object
 
             int nBackLog = 5;
-            int lnPortNum = 7010;
+            int lnPortNum = 7007;
             string strLocalIpAddr = "192.168.0.191";
+
+            stSrvSock.isConn = false;
+            stCliSock.isConn = false;
 
             if ((stSrvSock.objSock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) == null)
                 return;
@@ -108,42 +115,26 @@ namespace Common.BerkSocketMgr
             //Socket.Select(lstListen, null, null, 50000);
             Console.WriteLine("Now waiting CLIENT connect!");
             stCliSock.objSock = stSrvSock.objSock.Accept();
-            /*while (!Console.KeyAvailable)
-            {
-                nRcvLength = objCliSock.Receive(szRcvBuff);
-                if (nRcvLength <= 0)
-                {
-                    Thread.Sleep(500);
-                    nRcvLength = 0;
-                    continue;
-                }
-                else
-                {
-                    strBuff = Encoding.ASCII.GetString(szRcvBuff, 0, nRcvLength);
-                    //Console.WriteLine(strBuff);
-                    if (szRcvBuff[nRcvLength - 1] != 0x03)
-                    {
-                        Console.WriteLine("Invalid ETX in receive message!");
-                    }
-                    else if (strBuff.Contains("LPRS|"))
-                    {
-                        objRecoRslt.getRecogResult(ref stRecogMsg, ref szRcvBuff);
-                    }
-                    else if (strBuff.Contains("ST|"))
-                    {
-                        objStatInfo.getStatInfo(ref stStatMsg, ref szRcvBuff);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Invalid Instruction!");
-                    }
-                    nRcvLength = 0;
-                }
-            }*/
 
-            //objCliSock.Close();
-            //objSrvSock.Close();
+            // up to connection flag
+            stCliSock.isConn = true;
+
             Console.WriteLine("Socket accept SUCCESS!");
+            return;
+        }
+
+        public void reconnSocket(ref SOCK_INFO stSrvSock, ref SOCK_INFO stCliSock)
+        {
+            if(stCliSock.isConn == false)
+            {
+                closeSocket(ref stCliSock);
+                lock (stCliSock.objLock)
+                {
+                    stCliSock.objSock = stSrvSock.objSock.Accept();
+                }
+                Console.WriteLine("Socket re-accept SUCCESS!");
+            }
+            //return (int)ENUM_VALUE_SOCKETMGR.SUCCESS;
             return;
         }
 
@@ -151,11 +142,69 @@ namespace Common.BerkSocketMgr
         public void closeSocket(ref SOCK_INFO stSock)
         {
             //stSock.objSock != null ?  : Console.WriteLine("Try close null socket!");
-            if(stSock.objSock != null)
+            if (stSock.objSock != null)
+            {
                 lock (stSock.objSock)
+                {
+                    //stSock.isConn = false;
                     stSock.objSock.Close();
+                }
+            }
 
             return;
+        }
+
+        public int recvMsg(ref SOCK_INFO stSock)
+        {
+            __RECOG_RESULT stRecogResult = new __RECOG_RESULT();
+            __STAT_INFO stStatInfo = new __STAT_INFO();
+
+            RECOGRESULT objRecogResult = new RECOGRESULT();
+            STATINFO objStatInfo = new STATINFO();
+
+            int nRecvLength = 0;
+
+            byte[] szRcvBuff = new byte[1024];
+            string strBuff;
+
+            if (stSock.objSock == null)
+                return (int)ENUM_VALUE_SOCKETMGR.FAILED_NULL_SOCKET;
+
+            nRecvLength = stSock.objSock.Receive(szRcvBuff);
+            if (nRecvLength <= 0)
+            {
+                Thread.Sleep(500);
+                return (int)ENUM_VALUE_SOCKETMGR.RECV_NO_DATA;
+            }
+            else
+            {
+                strBuff = Encoding.ASCII.GetString(szRcvBuff, 0, nRecvLength);
+                //Console.WriteLine(strBuff);
+                if (szRcvBuff[nRecvLength - 1] != 0x03)
+                {
+                    Console.WriteLine("Invalid ETX in receive message!");
+                }
+                else if (strBuff.Contains("LPRS|"))
+                {
+                    objRecogResult.getRecogResult(ref stRecogResult, ref szRcvBuff);
+                }
+                else if (strBuff.Contains("ST|"))
+                {
+                    // re-up coonnection check flag
+                    lock (stSock.objLock)
+                    {
+                        stSock.isConn = true;
+                    }
+
+                    objStatInfo.getStatInfo(ref stStatInfo, ref szRcvBuff);
+                }
+                else
+                {
+                    Console.WriteLine("Invalid Instruction!");
+                }
+                return (int)ENUM_VALUE_SOCKETMGR.SUCCESS;
+                //nRecvLength = 0;
+            }
         }
     }
 }

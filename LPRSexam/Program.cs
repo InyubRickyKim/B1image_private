@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Collections;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,8 @@ namespace LPRSexam
 {
     class Program
     {
+        //ConcurrentQueue<bool> connQ = 
+        //public bool isConn = true;
         //private object objLock = new object();
         static void Main(string[] args)
         {
