@@ -4,3 +4,9 @@ c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\bin\Debug\LPRSexam.pd
 c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\obj\Debug\LPRSexam.exe
 c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\obj\Debug\LPRSexam.pdb
 c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\obj\Debug\LPRSexam.csprojResolveAssemblyReference.cache
+C:\Users\pc\Documents\GitHub\B1image_private\LPRSexam\bin\Debug\LPRSexam.exe.config
+C:\Users\pc\Documents\GitHub\B1image_private\LPRSexam\bin\Debug\LPRSexam.exe
+C:\Users\pc\Documents\GitHub\B1image_private\LPRSexam\bin\Debug\LPRSexam.pdb
+C:\Users\pc\Documents\GitHub\B1image_private\LPRSexam\obj\Debug\LPRSexam.csprojResolveAssemblyReference.cache
+C:\Users\pc\Documents\GitHub\B1image_private\LPRSexam\obj\Debug\LPRSexam.exe
+C:\Users\pc\Documents\GitHub\B1image_private\LPRSexam\obj\Debug\LPRSexam.pdb

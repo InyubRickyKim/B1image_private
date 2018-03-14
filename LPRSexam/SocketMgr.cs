@@ -2,12 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections;
 
-namespace BerkSocketMgr
+namespace Common.BerkSocketMgr
 {
+    public struct SOCK_INFO
+    {
+        public Socket objSock;
+        public object objLock;
+    }
     class SOCKET_MGR
     {
         enum ENUM_VALUE_SOCKETMGR : sbyte {
@@ -67,6 +74,88 @@ namespace BerkSocketMgr
             }
 
             return (int)ENUM_VALUE_SOCKETMGR.SUCCESS;
+        }
+
+        //public void SocketMgr(ref Socket objSrvSock, ref Socket objCliSock)
+        //public void connSocket(ref Socket objSrvSock, ref Socket objCliSock)
+        public void connSocket(ref SOCK_INFO stSrvSock, ref SOCK_INFO stCliSock)
+        {
+            IPEndPoint objEp = null;
+
+            SOCKET_MGR objSocketMgr = new SOCKET_MGR();
+
+            //ArrayList lstListen = new ArrayList();
+            //ArrayList lstAccept = new ArrayList();
+
+            // init lock object
+
+            int nBackLog = 5;
+            int lnPortNum = 7010;
+            string strLocalIpAddr = "192.168.0.191";
+
+            if ((stSrvSock.objSock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) == null)
+                return;
+
+            if ((objEp = new IPEndPoint(IPAddress.Parse(strLocalIpAddr), lnPortNum)) == null)
+                return;
+
+            stSrvSock.objSock.Bind(objEp);
+
+            stSrvSock.objSock.Listen(nBackLog);
+
+            //lstListen.Add(objSrvSock);
+
+            //Socket.Select(lstListen, null, null, 50000);
+            Console.WriteLine("Now waiting CLIENT connect!");
+            stCliSock.objSock = stSrvSock.objSock.Accept();
+            /*while (!Console.KeyAvailable)
+            {
+                nRcvLength = objCliSock.Receive(szRcvBuff);
+                if (nRcvLength <= 0)
+                {
+                    Thread.Sleep(500);
+                    nRcvLength = 0;
+                    continue;
+                }
+                else
+                {
+                    strBuff = Encoding.ASCII.GetString(szRcvBuff, 0, nRcvLength);
+                    //Console.WriteLine(strBuff);
+                    if (szRcvBuff[nRcvLength - 1] != 0x03)
+                    {
+                        Console.WriteLine("Invalid ETX in receive message!");
+                    }
+                    else if (strBuff.Contains("LPRS|"))
+                    {
+                        objRecoRslt.getRecogResult(ref stRecogMsg, ref szRcvBuff);
+                    }
+                    else if (strBuff.Contains("ST|"))
+                    {
+                        objStatInfo.getStatInfo(ref stStatMsg, ref szRcvBuff);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid Instruction!");
+                    }
+                    nRcvLength = 0;
+                }
+            }*/
+
+            //objCliSock.Close();
+            //objSrvSock.Close();
+            Console.WriteLine("Socket accept SUCCESS!");
+            return;
+        }
+
+        //public void closeSocket(ref Socket objSocket, ref object objLock)
+        public void closeSocket(ref SOCK_INFO stSock)
+        {
+            //stSock.objSock != null ?  : Console.WriteLine("Try close null socket!");
+            if(stSock.objSock != null)
+                lock (stSock.objSock)
+                    stSock.objSock.Close();
+
+            return;
         }
     }
 }
