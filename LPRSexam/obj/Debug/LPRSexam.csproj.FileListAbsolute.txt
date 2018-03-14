@@ -1,0 +1,6 @@
+c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\bin\Debug\LPRSexam.exe.config
+c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\bin\Debug\LPRSexam.exe
+c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\bin\Debug\LPRSexam.pdb
+c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\obj\Debug\LPRSexam.exe
+c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\obj\Debug\LPRSexam.pdb
+c:\users\pc\documents\visual studio 2013\Projects\LPRSexam\obj\Debug\LPRSexam.csprojResolveAssemblyReference.cache
