@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections;
+//using System.DateTime;
 
 using LPRSProtocol.LPRSToServerMsg;
 
@@ -16,7 +17,8 @@ namespace Common.BerkSocketMgr
     {
         public Socket objSock;
         public object objLock;
-        public bool isConn;
+        public bool bConn;
+        public long lnResetTime;
     }
     class SOCKET_MGR
     {
@@ -97,8 +99,8 @@ namespace Common.BerkSocketMgr
             int lnPortNum = 7007;
             string strLocalIpAddr = "192.168.0.191";
 
-            stSrvSock.isConn = false;
-            stCliSock.isConn = false;
+            //stSrvSock.bConn = false;
+            stCliSock.bConn = false;
 
             if ((stSrvSock.objSock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp)) == null)
                 return;
@@ -110,30 +112,47 @@ namespace Common.BerkSocketMgr
 
             stSrvSock.objSock.Listen(nBackLog);
 
-            //lstListen.Add(objSrvSock);
-
             //Socket.Select(lstListen, null, null, 50000);
             Console.WriteLine("Now waiting CLIENT connect!");
             stCliSock.objSock = stSrvSock.objSock.Accept();
 
             // up to connection flag
-            stCliSock.isConn = true;
+            stCliSock.bConn = true;
+            stSrvSock.bConn = true;
 
-            Console.WriteLine("Socket accept SUCCESS!");
+            stCliSock.lnResetTime = DateTime.UtcNow.Ticks;
+            stSrvSock.lnResetTime = DateTime.UtcNow.Ticks;
+            //stCliSock.lnResetTime = new DateTime.
+            Console.WriteLine("Socket accept SUCCESS!{0}", stCliSock.lnResetTime);
             return;
         }
 
         public void reconnSocket(ref SOCK_INFO stSrvSock, ref SOCK_INFO stCliSock)
         {
-            if(stCliSock.isConn == false)
+            double dTimeGap;
+            dTimeGap = (DateTime.UtcNow.Ticks - stCliSock.lnResetTime) / 10000.0f;
+            //Console.WriteLine("Timer Ticks : {0}", DateTime.UtcNow.Ticks);
+            if (dTimeGap > 12000)
             {
-                closeSocket(ref stCliSock);
+                Console.WriteLine("Client Disconnected! TimeGap : {0}", dTimeGap);
                 lock (stCliSock.objLock)
                 {
+                    stCliSock.bConn = false;
+                }
+            }
+
+            if (stCliSock.bConn == false)
+            {
+                lock (stCliSock.objLock)
+                {
+                    closeSocket(ref stCliSock);
+                    Console.WriteLine("Now wait client coneection...");
                     stCliSock.objSock = stSrvSock.objSock.Accept();
                 }
+                stCliSock.bConn = true;
                 Console.WriteLine("Socket re-accept SUCCESS!");
             }
+            //stCliSock.lnResetTime = DateTime.UtcNow.Ticks;
             //return (int)ENUM_VALUE_SOCKETMGR.SUCCESS;
             return;
         }
@@ -154,7 +173,7 @@ namespace Common.BerkSocketMgr
             return;
         }
 
-        public int recvMsg(ref SOCK_INFO stSock)
+        public void recvMsg(ref SOCK_INFO stSock)
         {
             __RECOG_RESULT stRecogResult = new __RECOG_RESULT();
             __STAT_INFO stStatInfo = new __STAT_INFO();
@@ -167,19 +186,25 @@ namespace Common.BerkSocketMgr
             byte[] szRcvBuff = new byte[1024];
             string strBuff;
 
-            if (stSock.objSock == null)
-                return (int)ENUM_VALUE_SOCKETMGR.FAILED_NULL_SOCKET;
-
+            if (stSock.bConn == false)
+            {
+                //return (int)ENUM_VALUE_SOCKETMGR.FAILED_NULL_SOCKET;
+                Console.Write("Now disconnected to client!");
+                return;
+            }
+            Console.WriteLine("recvMsg!");
             nRecvLength = stSock.objSock.Receive(szRcvBuff);
             if (nRecvLength <= 0)
             {
                 Thread.Sleep(500);
-                return (int)ENUM_VALUE_SOCKETMGR.RECV_NO_DATA;
+                Console.WriteLine("Receive NO-DATA{0}", nRecvLength);
+                //return (int)ENUM_VALUE_SOCKETMGR.RECV_NO_DATA;
+                return;
             }
             else
             {
                 strBuff = Encoding.ASCII.GetString(szRcvBuff, 0, nRecvLength);
-                //Console.WriteLine(strBuff);
+                Console.WriteLine(strBuff);
                 if (szRcvBuff[nRecvLength - 1] != 0x03)
                 {
                     Console.WriteLine("Invalid ETX in receive message!");
@@ -193,7 +218,8 @@ namespace Common.BerkSocketMgr
                     // re-up coonnection check flag
                     lock (stSock.objLock)
                     {
-                        stSock.isConn = true;
+                        stSock.lnResetTime = DateTime.UtcNow.Ticks;
+                        stSock.bConn = true;
                     }
 
                     objStatInfo.getStatInfo(ref stStatInfo, ref szRcvBuff);
@@ -202,7 +228,8 @@ namespace Common.BerkSocketMgr
                 {
                     Console.WriteLine("Invalid Instruction!");
                 }
-                return (int)ENUM_VALUE_SOCKETMGR.SUCCESS;
+                //return (int)ENUM_VALUE_SOCKETMGR.SUCCESS;
+                return;
                 //nRecvLength = 0;
             }
         }

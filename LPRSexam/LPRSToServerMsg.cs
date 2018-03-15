@@ -48,8 +48,13 @@ namespace LPRSProtocol.LPRSToServerMsg
         {
             int nCurIndx = 0;
             int nSepIndx = 0;
+            int nStrLength = 0;
 
             string szBuf = Encoding.ASCII.GetString(szMsg);
+            nStrLength = szBuf.Length;
+
+            Console.WriteLine(szBuf + " : Length{0}", nStrLength);
+            return;
 
             stDstMsg.hxSTX = szMsg[nCurIndx];
             nCurIndx += sizeof(byte);
@@ -186,8 +191,14 @@ namespace LPRSProtocol.LPRSToServerMsg
         {
             int nCurIndx = 0;
             int nSepIndx = 0;
+            int nStrLength = 0;
 
             string szBuf = Encoding.ASCII.GetString(szMsg);
+
+            nStrLength = szBuf.Length;
+
+            Console.WriteLine(szBuf + " : Length{0}", nStrLength);
+            return;
 
             stDstMsg.hxSTX = szMsg[nCurIndx];
             nCurIndx += sizeof(byte);
