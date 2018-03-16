@@ -8,7 +8,7 @@ namespace LPRSProtocol.LPRSToServerMsg
 {
     public struct __RECOG_RESULT
     {
-        public byte       hxSTX;
+        public byte hxSTX;
         public byte[] szMNum;
         public byte[] szInstr;
         public byte[] szTimeIndx;
@@ -44,20 +44,7 @@ namespace LPRSProtocol.LPRSToServerMsg
 
     public class RECOGRESULT
     {
-        public byte[] parseAsciiBytes(byte[] szMsg, string szBuf, ref int nCurIndx, ref int nSepIndx, int nStrLength)
-        {
-            byte[] szReturn;
-            if (nCurIndx > nStrLength)
-                return null;
-            else
-            {
-                nSepIndx = szBuf.IndexOf("|", nCurIndx);
-                szReturn = Encoding.ASCII.GetBytes(Encoding.ASCII.GetString(szMsg, nCurIndx, (nSepIndx - nCurIndx)));
-                nCurIndx += (nSepIndx - nCurIndx);
-                nCurIndx++;
-                return szReturn;
-            }
-        }
+        
         public void getRecogResult(ref __RECOG_RESULT stDstMsg, ref byte[] szMsg)
         {
             int nCurIndx = 0;

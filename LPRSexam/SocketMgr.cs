@@ -172,11 +172,21 @@ namespace Common.BerkSocketMgr
             return;
         }
 
-        public int chckRcvMsg(ref byte[] szRcvBuff, int nRcvLength)
+        public byte[] recvByteMsg(ref SOCK_INFO stSock, ref int nMsgLength)
         {
-            return 0;
+            byte[] szRcvBuff = new byte[1024];
+            try
+            {
+                nMsgLength = stSock.objSock.Receive(szRcvBuff);
+            }
+            catch(Exception eCmn)
+            {
+                Thread.Sleep(500);
+                Console.WriteLine("Exception!! Source : {0}, Message : {1}",
+                   eCmn.Source, eCmn.Message);
+            }
+            return szRcvBuff;
         }
-
         public void recvMsg(ref SOCK_INFO stSock)
         {
             __RECOG_RESULT stRecogResult = new __RECOG_RESULT();

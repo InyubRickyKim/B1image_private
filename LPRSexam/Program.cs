@@ -14,18 +14,19 @@ using LPRSProtocol.LPRSToServerMsg;
 using LPRSProtocol.ServerToLPRSMsg;
 using Common.BerkSocketMgr;
 using Common.ThreadMgr;
+using LPRSProtocol.Common;
 
 namespace LPRSexam
 {
     
-    public struct ST_SESS_TIMER
+    /*public struct ST_SESS_TIMER
     {
         public SOCK_INFO stSrvInfo;
         public SOCK_INFO stCliInfo;
         public System.Timers.Timer objSessChckTiemr;
         //reconnDelegate dlgReconn;
         //int nSessInterval;
-    };
+    };*/
     class Program
     {
         public delegate void recvMsgDelegate(ref SOCK_INFO stSock);
@@ -48,6 +49,8 @@ namespace LPRSexam
             stCliSock = new SOCK_INFO();
             objSockMgr = new SOCKET_MGR();
 
+            //LprsToServerCOMMON objLtoS = new LprsToServerCOMMON();
+
             double ldInterval = 1000 * 10;
 
             stSrvSock.objLock = new object();
@@ -57,14 +60,104 @@ namespace LPRSexam
 
             setSessionCheckTimer(ldInterval);
 
-            while (true)
-            {
-                //Thread.Sleep(100);
-                objSockMgr.recvMsg(ref stCliSock);
-            }
+            do_MainThread();
+
             // working main thread
             objSockMgr.closeSocket(ref stSrvSock);
             objSockMgr.closeSocket(ref stCliSock);
+        }
+        
+        private static void do_MainThread()
+        {
+            __RECOG_RESULT stRecogResult = new __RECOG_RESULT();
+            __STAT_INFO stStatInfo = new __STAT_INFO();
+
+            PROTOCOL_COMMON objProtCmn = new PROTOCOL_COMMON();
+            RECOGRESULT objRecogResult = new RECOGRESULT();
+            STATINFO objStatInfo = new STATINFO();
+
+            byte[] szRecvBuff = new byte[1024];
+
+            int nRecvLength = 0;
+            int nRetVal = 0;
+            string strRetStr = "";
+
+            while (true)
+            {
+                if (stCliSock.bConn == false)
+                {
+                    Thread.Sleep(100);
+                    continue;
+                }
+                
+                szRecvBuff = objSockMgr.recvByteMsg(ref stCliSock, ref nRecvLength);
+                if (nRecvLength <= 0)
+                {
+                    Thread.Sleep(500);
+                    Console.WriteLine("Receive NO-DATA{0}", nRecvLength);
+                    continue;
+                }
+                nRetVal = objProtCmn.chkMsg(szRecvBuff, nRecvLength);
+                if (nRetVal != (int)PROTOCOL_COMMON.E_PROTOCOL_RET.SUCCESS)
+                {
+                    //objLtoS.getLprsMsg(szRecvBuff, nRecvLength);
+                    strRetStr = "";
+                    strRetStr = chkInstruction(szRecvBuff, ref stCliSock);
+                    if (strRetStr.Contains("LPRS|"))
+                    {
+                        objRecogResult.getRecogResult(ref stRecogResult, ref szRecvBuff);
+                    }
+                    else if(strRetStr.Contains("ST|"))
+                    {
+                        lock (stCliSock.objLock)
+                        {
+                            stCliSock.lnResetTime = DateTime.UtcNow.Ticks;
+                            stCliSock.bConn = true;
+                        }
+
+                        objStatInfo.getStatInfo(ref stStatInfo, ref szRecvBuff);
+                    }
+                    else
+                    {
+                        
+                    }
+
+                }
+                else
+                {
+                    Console.WriteLine(Encoding.ASCII.GetString(szRecvBuff));
+                    continue;
+                }
+            }
+        }
+
+        private static string chkInstruction(byte[] szRecvBuff, ref SOCK_INFO stSock)
+        {
+            string strBuff;
+            string strRet;
+            strBuff = Encoding.ASCII.GetString(szRecvBuff);
+
+            if (strBuff.Contains("LPRS|"))
+            {
+                //objRecogResult.getRecogResult(ref stRecogResult, ref szRecvBuff);
+                strRet = "LPRS|";
+            }
+            else if (strBuff.Contains("ST|"))
+            {
+                // re-up coonnection check flag
+                lock (stSock.objLock)
+                {
+                    stSock.lnResetTime = DateTime.UtcNow.Ticks;
+                    stSock.bConn = true;
+                }
+
+                //objStatInfo.getStatInfo(ref stStatInfo, ref szRecvBuff);
+                strRet = "ST|";
+            }
+            else
+                strRet = "INVALID_STRUCTION";
+
+            return strRet;
         }
 
         //private void setSessionCheckTimer(SOCK_INFO stSrvSock, SOCK_INFO stCliSock, int nInterval)
