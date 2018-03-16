@@ -42,8 +42,22 @@ namespace LPRSProtocol.LPRSToServerMsg
         public byte hxETX;
     };
 
-    class RECOGRESULT
+    public class RECOGRESULT
     {
+        public byte[] parseAsciiBytes(byte[] szMsg, string szBuf, ref int nCurIndx, ref int nSepIndx, int nStrLength)
+        {
+            byte[] szReturn;
+            if (nCurIndx > nStrLength)
+                return null;
+            else
+            {
+                nSepIndx = szBuf.IndexOf("|", nCurIndx);
+                szReturn = Encoding.ASCII.GetBytes(Encoding.ASCII.GetString(szMsg, nCurIndx, (nSepIndx - nCurIndx)));
+                nCurIndx += (nSepIndx - nCurIndx);
+                nCurIndx++;
+                return szReturn;
+            }
+        }
         public void getRecogResult(ref __RECOG_RESULT stDstMsg, ref byte[] szMsg)
         {
             int nCurIndx = 0;
@@ -58,6 +72,7 @@ namespace LPRSProtocol.LPRSToServerMsg
 
             stDstMsg.hxSTX = szMsg[nCurIndx];
             nCurIndx += sizeof(byte);
+            if (nCurIndx > nStrLength) return;
 
             nSepIndx = szBuf.IndexOf("|", nCurIndx);
             stDstMsg.szMNum = Encoding.ASCII.GetBytes(Encoding.ASCII.GetString(szMsg, nCurIndx, (nSepIndx - nCurIndx)));
@@ -142,7 +157,7 @@ namespace LPRSProtocol.LPRSToServerMsg
         }
     }
 
-    class STATINFO
+    public class STATINFO
     {
         public void makeStatInfo(ref byte[] szMsg)
         {

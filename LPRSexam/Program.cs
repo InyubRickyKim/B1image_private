@@ -25,7 +25,7 @@ namespace LPRSexam
         public System.Timers.Timer objSessChckTiemr;
         //reconnDelegate dlgReconn;
         //int nSessInterval;
-    }
+    };
     class Program
     {
         public delegate void recvMsgDelegate(ref SOCK_INFO stSock);
@@ -47,9 +47,12 @@ namespace LPRSexam
             stSrvSock = new SOCK_INFO();
             stCliSock = new SOCK_INFO();
             objSockMgr = new SOCKET_MGR();
-            
 
             double ldInterval = 1000 * 10;
+
+            stSrvSock.objLock = new object();
+            stCliSock.objLock = new object();
+
             objSockMgr.connSocket(ref stSrvSock, ref stCliSock);
 
             setSessionCheckTimer(ldInterval);

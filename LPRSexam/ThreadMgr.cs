@@ -13,10 +13,6 @@ namespace Common.ThreadMgr
     class ThreadMgr
     {
         public delegate void RecvDelegate(ref SOCK_INFO stCliSock);
-        void chngConnFlag()
-        {
-
-        }
         public void recvThread(ref SOCKET_MGR objSockMgr, ref SOCK_INFO stCliSock, bool bBackGround)
         {
             /*RecvDelegate dlgRecv = new RecvDelegate(objSockMgr.recvMsg);
