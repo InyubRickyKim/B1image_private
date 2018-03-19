@@ -51,7 +51,7 @@ namespace LPRSexam
 
             //LprsToServerCOMMON objLtoS = new LprsToServerCOMMON();
 
-            double ldInterval = 1000 * 10;
+            double ldInterval = 1000;           // 1000 msec
 
             stSrvSock.objLock = new object();
             stCliSock.objLock = new object();
@@ -60,14 +60,14 @@ namespace LPRSexam
 
             setSessionCheckTimer(ldInterval);
 
-            do_MainThread();
+            doMainThread();
 
             // working main thread
             objSockMgr.closeSocket(ref stSrvSock);
             objSockMgr.closeSocket(ref stCliSock);
         }
         
-        private static void do_MainThread()
+        private static void doMainThread()
         {
             __RECOG_RESULT stRecogResult = new __RECOG_RESULT();
             __STAT_INFO stStatInfo = new __STAT_INFO();
@@ -80,7 +80,7 @@ namespace LPRSexam
 
             int nRecvLength = 0;
             int nRetVal = 0;
-            string strRetStr = "";
+            string strRetStr;
 
             while (true)
             {
@@ -97,31 +97,29 @@ namespace LPRSexam
                     Console.WriteLine("Receive NO-DATA{0}", nRecvLength);
                     continue;
                 }
+                lock (stCliSock.objLock)
+                {
+                    stCliSock.lnResetTime = DateTime.UtcNow.Ticks;
+                    stCliSock.bConn = true;
+                }
                 nRetVal = objProtCmn.chkMsg(szRecvBuff, nRecvLength);
-                if (nRetVal != (int)PROTOCOL_COMMON.E_PROTOCOL_RET.SUCCESS)
+                if (nRetVal > (int)PROTOCOL_COMMON.E_PROTOCOL_RET.SUCCESS)
                 {
                     //objLtoS.getLprsMsg(szRecvBuff, nRecvLength);
                     strRetStr = "";
                     strRetStr = chkInstruction(szRecvBuff, ref stCliSock);
                     if (strRetStr.Contains("LPRS|"))
                     {
-                        objRecogResult.getRecogResult(ref stRecogResult, ref szRecvBuff);
+                        objRecogResult.getRecogResult(ref stRecogResult, szRecvBuff);
                     }
                     else if(strRetStr.Contains("ST|"))
                     {
-                        lock (stCliSock.objLock)
-                        {
-                            stCliSock.lnResetTime = DateTime.UtcNow.Ticks;
-                            stCliSock.bConn = true;
-                        }
-
-                        objStatInfo.getStatInfo(ref stStatInfo, ref szRecvBuff);
+                        objStatInfo.getStatInfo(ref stStatInfo, szRecvBuff);
                     }
                     else
                     {
-                        //do something
+                        Console.WriteLine(strRetStr);
                     }
-
                 }
                 else
                 {

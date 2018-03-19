@@ -13,21 +13,32 @@ namespace LPRSProtocol.Common
         public enum E_PROTOCOL_RET : int
         {
             SUCCESS = 0,
+            FAIL,
             INVALID_MSG,
             NO_STX_MSG,
             NO_ETX_MSG
         };
 
-        public byte[] parseAsciiBytes(byte[] szMsg, string szBuf, ref int nCurIndx, ref int nSepIndx, int nStrLength)
+        public int getIndexOfETX(byte[] szMsg)
         {
-            byte[] szReturn;
-            if (nCurIndx > nStrLength)
+            return Array.IndexOf(szMsg, hxETX, 0);
+        }
+
+        public byte[] parseAsciiBytes(byte[] szMsg, ref int nCurIndx, int nStrLength, byte cPattern)
+        {
+            int nSepIndx = 0;
+            if (nCurIndx >= nStrLength)
                 return null;
             else
             {
-                nSepIndx = szBuf.IndexOf("|", nCurIndx);
-                szReturn = Encoding.ASCII.GetBytes(Encoding.ASCII.GetString(szMsg, nCurIndx, (nSepIndx - nCurIndx)));
-                nCurIndx += (nSepIndx - nCurIndx);
+                nSepIndx = Array.IndexOf(szMsg, cPattern, nCurIndx);
+                byte[] szReturn = new byte[nSepIndx - nCurIndx];
+                int i = 0;
+                for(; nCurIndx < nSepIndx; nCurIndx++)
+                {
+                    szReturn[i] = szMsg[nCurIndx];
+                    i++;
+                }
                 nCurIndx++;
                 return szReturn;
             }
@@ -35,7 +46,7 @@ namespace LPRSProtocol.Common
 
         public int chkMsg(byte[] szMsg, int nMsgLength)
         {
-            int nRetVal = (int)E_PROTOCOL_RET.SUCCESS;
+            int nRetVal = (int)E_PROTOCOL_RET.FAIL;
             if (szMsg[0] != hxSTX)
             {
                 if (szMsg[nMsgLength - 1] != hxETX)

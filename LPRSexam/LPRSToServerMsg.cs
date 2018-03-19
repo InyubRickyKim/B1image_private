@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using LPRSProtocol.Common;
+
 namespace LPRSProtocol.LPRSToServerMsg
 {
     public struct __RECOG_RESULT
@@ -44,8 +46,55 @@ namespace LPRSProtocol.LPRSToServerMsg
 
     public class RECOGRESULT
     {
-        
-        public void getRecogResult(ref __RECOG_RESULT stDstMsg, ref byte[] szMsg)
+
+        public void getRecogResult(ref __RECOG_RESULT stRecogResult, byte[] szMsg)
+        {
+            int nCurIndex = 0;
+            int nIndexOfETX = 0;
+
+            PROTOCOL_COMMON objProtCmn = new PROTOCOL_COMMON();
+
+            nIndexOfETX = objProtCmn.getIndexOfETX(szMsg);
+            if (nIndexOfETX <= 1)
+                return;
+
+            // Set STX, ETX
+            stRecogResult.hxSTX = szMsg[nCurIndex];
+            stRecogResult.hxETX = szMsg[nIndexOfETX];
+
+            nCurIndex++;
+
+            stRecogResult.szMNum = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szInstr = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szTimeIndx = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szCogResult = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szPhoto = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szSpeed = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szNumLocation = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szIndx = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szColor = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szCogPhoto = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stRecogResult.szLane = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+
+            Console.WriteLine(stRecogResult.hxSTX);
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szMNum));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szInstr));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szTimeIndx));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szCogResult));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szPhoto));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szSpeed));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szNumLocation));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szIndx));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szColor));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szCogPhoto));
+            Console.WriteLine(BitConverter.ToString(stRecogResult.szLane));
+            Console.WriteLine(stRecogResult.hxETX);
+            //BitConverter.ToChar(stRecogResult.hxSTX, 0);
+
+            return;
+        }
+
+        /*public void getRecogResult(ref __RECOG_RESULT stDstMsg, ref byte[] szMsg)
         {
             int nCurIndx = 0;
             int nSepIndx = 0;
@@ -54,12 +103,11 @@ namespace LPRSProtocol.LPRSToServerMsg
             string szBuf = Encoding.ASCII.GetString(szMsg);
             nStrLength = szBuf.Length;
 
-            Console.WriteLine(szBuf + " : Length{0}", nStrLength);
-            return;
-
             stDstMsg.hxSTX = szMsg[nCurIndx];
             nCurIndx += sizeof(byte);
-            if (nCurIndx > nStrLength) return;
+
+            Console.WriteLine(szBuf + " : Length{0}", nStrLength);
+            return;
 
             nSepIndx = szBuf.IndexOf("|", nCurIndx);
             stDstMsg.szMNum = Encoding.ASCII.GetBytes(Encoding.ASCII.GetString(szMsg, nCurIndx, (nSepIndx - nCurIndx)));
@@ -121,7 +169,8 @@ namespace LPRSProtocol.LPRSToServerMsg
 
             Console.WriteLine(Encoding.ASCII.GetString(stDstMsg.szLane));
             Console.WriteLine(stDstMsg.hxETX);
-        }
+        }*/
+
         public void mskeRecogResult(ref byte[] szMsg)
         {
             int nDstIndx;
@@ -166,30 +215,44 @@ namespace LPRSProtocol.LPRSToServerMsg
             nSrcLen = sizeof(byte);
             Buffer.SetByte(szMsg, nDstIndx, (byte)0x03);
 
-            //Console.WriteLine("{0}", Encoding.ASCII.GetString(szMsg));
-
-            //__STAT_INFO stMsg = new __STAT_INFO();
-
-            /*stMsg.hxSTX = 0x02;
-            stMsg.szMNum = Encoding.ASCII.GetBytes("F001|");
-            stMsg.szInstr = Encoding.ASCII.GetBytes("ST|");
-            stMsg.szDoorStat = Encoding.ASCII.GetBytes("DS=0|");
-            stMsg.szLoop = Encoding.ASCII.GetBytes("LO=1");
-            stMsg.szMTemp = Encoding.ASCII.GetBytes("TM=27|");
-            stMsg.szUnknown = Encoding.ASCII.GetBytes("TP=0|");
-            stMsg.szIsFanUse = Encoding.ASCII.GetBytes("FS=1|");
-            stMsg.szIsHeatUse = Encoding.ASCII.GetBytes("HS=0|");
-            stMsg.szIsLampUse = Encoding.ASCII.GetBytes("LS=1|");
-            stMsg.szVer = Encoding.ASCII.GetBytes("SW-v2.16-170205b|");
-            stMsg.szLane = Encoding.ASCII.GetBytes("LN=1|");
-            stMsg.szCurPT = Encoding.ASCII.GetBytes("PT=1-1-2-0-0|");
-            stMsg.szIsActive = Encoding.ASCII.GetBytes("CS=1|");
-            stMsg.hxETX = 0x03;
-
-            makeStatInfoMsg(ref stMsg, ref szMsg);*/
+            return;
         }
 
-        public void getStatInfo(ref __STAT_INFO stDstMsg, ref byte[] szMsg)
+        public void getStatInfo(ref __STAT_INFO stStatInfo, byte[] szMsg)
+        {
+            int nCurIndex = 0;
+            int nIndexOfETX = 0;
+
+            PROTOCOL_COMMON objProtCmn = new PROTOCOL_COMMON();
+
+            nIndexOfETX = objProtCmn.getIndexOfETX(szMsg);
+            if (nIndexOfETX <= 1)
+                return;
+
+            // Set STX, ETX
+            stStatInfo.hxSTX = szMsg[nCurIndex];
+            stStatInfo.hxETX = szMsg[nIndexOfETX];
+
+            nCurIndex++;
+
+            stStatInfo.szMNum = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szInstr = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szDoorStat = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szLoop = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szMTemp = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szUnused = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szIsFanUse = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szIsHeatUse = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szIsLampUse = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szVer = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szLane = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szCurPT = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+            stStatInfo.szIsActive = objProtCmn.parseAsciiBytes(szMsg, ref nCurIndex, nIndexOfETX, 0x7C);
+
+            return;
+        }
+
+        /*public void getStatInfo(ref __STAT_INFO stDstMsg, ref byte[] szMsg)
         {
             int nCurIndx = 0;
             int nSepIndx = 0;
@@ -280,6 +343,6 @@ namespace LPRSProtocol.LPRSToServerMsg
             Console.WriteLine(Encoding.ASCII.GetString(stDstMsg.szCurPT));
             Console.WriteLine(Encoding.ASCII.GetString(stDstMsg.szIsActive));
             Console.WriteLine(stDstMsg.hxETX);
-        }
+        }*/
     }
 }

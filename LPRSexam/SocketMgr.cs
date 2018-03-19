@@ -145,8 +145,9 @@ namespace Common.BerkSocketMgr
                 lock (stCliSock.objLock)
                 {
                     closeSocket(ref stCliSock);
-                    Console.WriteLine("Now wait client connection...");
+                    //Console.WriteLine("Now wait client connection...");
                     stCliSock.objSock = stSrvSock.objSock.Accept();
+                    stCliSock.lnResetTime = DateTime.UtcNow.Ticks;
                 }
                 stCliSock.bConn = true;
                 Console.WriteLine("Socket re-accept SUCCESS!");
@@ -175,6 +176,7 @@ namespace Common.BerkSocketMgr
         public byte[] recvByteMsg(ref SOCK_INFO stSock, ref int nMsgLength)
         {
             byte[] szRcvBuff = new byte[1024];
+            //byte[] szRcvBuff;
             try
             {
                 nMsgLength = stSock.objSock.Receive(szRcvBuff);
@@ -236,7 +238,7 @@ namespace Common.BerkSocketMgr
                 }
                 else if (strBuff.Contains("LPRS|"))
                 {
-                    objRecogResult.getRecogResult(ref stRecogResult, ref szRcvBuff);
+                    objRecogResult.getRecogResult(ref stRecogResult, szRcvBuff);
                 }
                 else if (strBuff.Contains("ST|"))
                 {
@@ -247,7 +249,7 @@ namespace Common.BerkSocketMgr
                         stSock.bConn = true;
                     }
 
-                    objStatInfo.getStatInfo(ref stStatInfo, ref szRcvBuff);
+                    objStatInfo.getStatInfo(ref stStatInfo, szRcvBuff);
                 }
                 else
                 {
