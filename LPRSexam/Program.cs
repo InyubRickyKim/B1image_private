@@ -14,11 +14,11 @@ using LPRSProtocol.LPRSToServerMsg;
 using LPRSProtocol.ServerToLPRSMsg;
 using Common.BerkSocketMgr;
 using Common.ThreadMgr;
+using Common.QMgr;
 using LPRSProtocol.Common;
 
 namespace LPRSexam
 {
-    
     /*public struct ST_SESS_TIMER
     {
         public SOCK_INFO stSrvInfo;
@@ -30,35 +30,61 @@ namespace LPRSexam
     class Program
     {
         public delegate void recvMsgDelegate(ref SOCK_INFO stSock);
+        public delegate void sendMsgDelegate(ref SOCK_INFO stSock, byte[] szMsg, int nMsgLength);
         //reconnDelegate dlgReconn;
         //ST_SESS_TIMER stSessTimer = new ST_SESS_TIMER();
         //ST_SESS_TIMER stSessTimer;
 
         static private SOCK_INFO stSrvSock;
         static private SOCK_INFO stCliSock;
+
         static private SOCKET_MGR objSockMgr;
+        static private Q_MGR objQMgr;
+
+        static private ST_THRD_MGR stSndrThrd;
+
+        //static private Thread objSndThrd;
+
+        //static var objSndrQ;
+
+        //static private object objSndrQ;
+
         static System.Timers.Timer objSessChkTimer;
 
         //int gnSessInterval;
         static void Main(string[] args)
         {
-            //SOCK_INFO stSrvSock = new SOCK_INFO();
-            //SOCK_INFO stCliSock = new SOCK_INFO();
-            //SOCKET_MGR objSockMgr = new SOCKET_MGR();
-            stSrvSock = new SOCK_INFO();
-            stCliSock = new SOCK_INFO();
-            objSockMgr = new SOCKET_MGR();
+            //stSrvSock = new SOCK_INFO();
+            //stCliSock = new SOCK_INFO();
+            //stSndrThrd = new ST_THRD_MGR();
 
-            //LprsToServerCOMMON objLtoS = new LprsToServerCOMMON();
+            objSockMgr = new SOCKET_MGR();
+            objQMgr = new Q_MGR();
+
+            THREAD_MGR objThrdMgr = new THREAD_MGR();
+
+            //objSndrQ = new object();
+            //var objSndrQ = new ConcurrentQueue<string>();
+            stSndrThrd.objLock = new object();
+            stSndrThrd.objQueue = new ConcurrentQueue<string>();
+            stSndrThrd.stSock = stCliSock;
+
+            object objSndThrd = new object();
 
             double ldInterval = 1000;           // 1000 msec
 
             stSrvSock.objLock = new object();
             stCliSock.objLock = new object();
 
+            //objQMgr.initByteConcurrentQueue(ref objSndrQ);
+
             objSockMgr.connSocket(ref stSrvSock, ref stCliSock);
 
             setSessionCheckTimer(ldInterval);
+
+            objThrdMgr.runSendThrd(stSndrThrd, ref objSndThrd);
+
+            stSndrThrd.objThrd = objSndThrd;
 
             doMainThread();
 
@@ -67,6 +93,8 @@ namespace LPRSexam
             objSockMgr.closeSocket(ref stCliSock);
         }
         
+        //private static void runSendThrd(ST_THRD_MGR stThrd)
+
         private static void doMainThread()
         {
             __RECOG_RESULT stRecogResult = new __RECOG_RESULT();
@@ -76,9 +104,11 @@ namespace LPRSexam
             RECOGRESULT objRecogResult = new RECOGRESULT();
             STATINFO objStatInfo = new STATINFO();
 
+            ConcurrentQueue<string> objSndrQ = (ConcurrentQueue < string > )stSndrThrd.objQueue;
+
             byte[] szRecvBuff = new byte[1024];
 
-            int nRecvLength = 0;
+            int nRecvLength = 1024;
             int nRetVal = 0;
             string strRetStr;
 
@@ -89,7 +119,8 @@ namespace LPRSexam
                     Thread.Sleep(100);
                     continue;
                 }
-                
+
+                Array.Clear(szRecvBuff, 0, nRecvLength);
                 szRecvBuff = objSockMgr.recvByteMsg(ref stCliSock, ref nRecvLength);
                 if (nRecvLength <= 0)
                 {
@@ -111,6 +142,7 @@ namespace LPRSexam
                     if (strRetStr.Contains("LPRS|"))
                     {
                         objRecogResult.getRecogResult(ref stRecogResult, szRecvBuff);
+                        objSndrQ.Enqueue("LPRS");
                     }
                     else if(strRetStr.Contains("ST|"))
                     {
@@ -119,6 +151,7 @@ namespace LPRSexam
                     else
                     {
                         Console.WriteLine(strRetStr);
+                        //Console.WriteLine(Encoding.ASCII.GetString(szRecvBuff));
                     }
                 }
                 else
@@ -169,14 +202,14 @@ namespace LPRSexam
             objSessChkTimer.AutoReset = false;
             //dlgReconn = new reconnDelegate(objSockMgr.reconnSocket);
             objSessChkTimer.Start();
-            Console.WriteLine("Session Check Timer Start!");
+            //Console.WriteLine("Session Check Timer Start!");
         }
 
         //public void reconnTimer(object sender, ref SOCKET_MGR objSockMgr, ref SOCK_INFO stSrvSock, ref SOCK_INFO stCliSock)
         private static void reconnTimer(object sender, ElapsedEventArgs e)
         {
             objSockMgr.reconnSocket(ref stSrvSock, ref stCliSock);
-            Console.WriteLine("Session Check Timer Restart!(Flag : {0})", stCliSock.bConn == true ? "True" : "FALSE");
+            //Console.WriteLine("Session Check Timer Restart!(Flag : {0})", stCliSock.bConn == true ? "True" : "FALSE");
             objSessChkTimer.Start();
         }
     }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections;
+using System.Reflection;
 //using System.DateTime;
 
 using LPRSProtocol.LPRSToServerMsg;
@@ -131,7 +132,7 @@ namespace Common.BerkSocketMgr
             double dTimeGap;
             dTimeGap = (DateTime.UtcNow.Ticks - stCliSock.lnResetTime) / 10000.0f;
             //Console.WriteLine("Timer Ticks : {0}", DateTime.UtcNow.Ticks);
-            if (dTimeGap > 12000)
+            if (dTimeGap > 11000)
             {
                 Console.WriteLine("Client Disconnected! TimeGap : {0} milli-second", dTimeGap);
                 lock (stCliSock.objLock)
@@ -188,6 +189,20 @@ namespace Common.BerkSocketMgr
                    eCmn.Source, eCmn.Message);
             }
             return szRcvBuff;
+        }
+
+        public void sendByteMsg(ref SOCK_INFO stSock, byte[] szMsg, int nMsgLength)
+        {
+            try
+            {
+                stSock.objSock.Send(szMsg, 0, nMsgLength, SocketFlags.None);
+            }
+            catch(Exception eCmn)
+            {
+                Thread.Sleep(500);
+                Console.WriteLine("{0} : {1}", MethodBase.GetCurrentMethod().Name, eCmn.Message);
+            }
+            return;
         }
         public void recvMsg(ref SOCK_INFO stSock)
         {
